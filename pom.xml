@@ -10,7 +10,7 @@
 
     <groupId>de.javagl</groupId>
     <artifactId>viewer-cells</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
 
     <name>viewer</name>
     <description>A viewer and renderer for rectangle and hexagon cell maps</description>
