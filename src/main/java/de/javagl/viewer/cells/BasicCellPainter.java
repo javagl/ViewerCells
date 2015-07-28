@@ -106,31 +106,6 @@ public class BasicCellPainter implements ObjectPainter<Cell>
         new Rectangle2D.Double(0,0,1,1);
     
     /**
-     * A default stroke for the shapes
-     */
-    private static final Stroke DEFAULT_STROKE =
-        new BasicStroke(1.0f);
-
-    /**
-     * A default anchor point for the labels 
-     */
-    private static final Point2D DEFAULT_LABEL_ANCHOR = 
-        new Point2D.Double(0.5, 0.5); 
-    
-    /**
-     * A default location point for the labels 
-     */
-    private static final Point2D DEFAULT_LABEL_LOCATION = 
-        new Point2D.Double(0.5, 0.5); 
-    
-    /**
-     * A default font point for the labels 
-     */
-    private static final Font DEFAULT_LABEL_FONT = 
-        new Font("Dialog", Font.PLAIN, 1); 
-    
-
-    /**
      * A rectangle instance used for internal computations 
      */
     private static final Rectangle2D TEMP_RECTANGLE = new Rectangle2D.Double();
@@ -253,22 +228,49 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     /**
      * Creates a cell painter. <br>
      * <br>
-     * By default, this painter will not paint anything.<br>
+     * By default, this painter will not paint anything, but it will
+     * be initialized with the following default values:<br>
      * <br>
-     * It will not {@link #setTransformingLabels(boolean) transform the labels},
-     * but it will {@link #setHidingLongLabels(boolean) hide long labels}
-     * and have a default {@link #setLabelFont(Font) label font}.
+     * <ul>
+     *   <li> 
+     *     It will have a default {@link #setLabelFont(Font) label font},
+     *     which is a <code>"Dialog"</code> font with a size of 10.0f
+     *   </li>
+     *   <li> 
+     *     It will have a default {@link #setLabelAnchor(Point2D) label anchor}
+     *     and {@link #setLabelLocation(Point2D) label location}, which are
+     *     both (0.5, 0.5), so that the label is centered
+     *   </li>
+     *   <li> 
+     *     It will not {@link #setTransformingLabels(boolean) transform 
+     *     the labels}
+     *   </li>
+     *   <li> 
+     *     It will {@link #setHidingLongLabels(boolean) hide long labels}
+     *   </li>
+     *   <li> 
+     *     It will have a basic {@link #setDrawStroke(Stroke) draw stroke}
+     *     and {@link #setContentDrawStroke(Stroke) content draw stroke}
+     *     with a width of 1.0f
+     *   </li>
+     * </ul>  
      */
     public BasicCellPainter()
     {
-        setLabelFont(new Font("Dialog", Font.PLAIN, 1).deriveFont(10.0f));
-        transformingLabels = false;
-        hidingLongLabels = true;
         scaledWorldToScreenTransform = new AffineTransform();
         contentTransform = new AffineTransform();
         backupContentTransform = new AffineTransform();
+
+        setLabelFont(new Font("Dialog", Font.PLAIN, 1).deriveFont(10.0f));
+        setLabelAnchor(new Point2D.Double(0.5, 0.5));
+        setLabelLocation(new Point2D.Double(0.5, 0.5));
+
+        setTransformingLabels(false);
+        setHidingLongLabels(true);
+        
+        setDrawStroke(new BasicStroke(1.0f));        
+        setContentDrawStroke(new BasicStroke(1.0f));
     }
-    
     
     /**
      * Set the fill paint that will be used for all cells
@@ -844,9 +846,8 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     /**
      * Returns the draw stroke for the given cell.<br>
      * <br> 
-     * If the {@link #setDrawStrokeFunction(Function) draw stroke function}
-     * is <code>null</code> or returns <code>null</code> for the given cell,
-     * then a default stroke will be returned.
+     * Returns <code>null</code> if the corresponding painting operation
+     * should be skipped.
      * 
      * @param cell The cell
      * @return The stroke
@@ -855,14 +856,9 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     {
         if (drawStrokeFunction == null)
         {
-            return DEFAULT_STROKE;
+            return null;
         }
-        Stroke stroke = drawStrokeFunction.apply(cell);
-        if (stroke == null)
-        {
-            return DEFAULT_STROKE;
-        }
-        return stroke;
+        return drawStrokeFunction.apply(cell);
     }
     
     
@@ -905,9 +901,8 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     /**
      * Returns the draw stroke for the given cell content.<br>
      * <br> 
-     * If the {@link #setContentDrawStrokeFunction(Function) content draw 
-     * stroke function} is <code>null</code> or returns <code>null</code> 
-     * for the given cell, then a default stroke will be returned.
+     * Returns <code>null</code> if the corresponding painting operation
+     * should be skipped.
      * 
      * @param cell The cell
      * @return The stroke
@@ -916,14 +911,9 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     {
         if (contentDrawStrokeFunction == null)
         {
-            return DEFAULT_STROKE;
+            return null;
         }
-        Stroke stroke = contentDrawStrokeFunction.apply(cell);
-        if (stroke == null)
-        {
-            return DEFAULT_STROKE;
-        }
-        return stroke;
+        return contentDrawStrokeFunction.apply(cell);
     }
     
     /**
@@ -977,27 +967,19 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     /**
      * Returns the label font for the given cell.<br>
      * <br>
-     * If the {@link #setLabelFontFunction(Function) label font function}
-     * is <code>null</code> or returns <code>null</code> for the given 
-     * cell, then a default font will be returned. (Currently this is
-     * the "Dialog" font with a size of 1.0f. It is unlikely (though not
-     * impossible) that this will change).
+     * Returns <code>null</code> if the corresponding painting operation
+     * should be skipped.
      * 
      * @param cell The cell
-     * @return The paint
+     * @return The font
      */
     protected final Font getLabelFont(Cell cell)
     {
         if (labelFontFunction == null)
         {
-            return DEFAULT_LABEL_FONT;
+            return null;
         }
-        Font font = labelFontFunction.apply(cell);
-        if (font == null)
-        {
-            return DEFAULT_LABEL_FONT;
-        }
-        return font;
+        return labelFontFunction.apply(cell);
     }
     
     /**
@@ -1042,9 +1024,8 @@ public class BasicCellPainter implements ObjectPainter<Cell>
      * <b><u>WARNING</u>: The returned point may <u>NOT</u> be 
      * modified by the caller!</b><br>
      * <br>
-     * If the {@link #setLabelAnchorFunction(Function) label anchor function}
-     * is <code>null</code> or returns <code>null</code> for the given cell,
-     * then a default point will be returned.
+     * Returns <code>null</code> if the corresponding painting operation
+     * should be skipped.
      * 
      * @param cell The cell
      * @return The label anchor
@@ -1053,14 +1034,9 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     {
         if (labelAnchorFunction == null)
         {
-            return DEFAULT_LABEL_ANCHOR;
+            return null;
         }
-        Point2D anchor = labelAnchorFunction.apply(cell);
-        if (anchor == null)
-        {
-            return DEFAULT_LABEL_ANCHOR;
-        }
-        return anchor;
+        return labelAnchorFunction.apply(cell);
     }
     
     /**
@@ -1069,9 +1045,8 @@ public class BasicCellPainter implements ObjectPainter<Cell>
      * <b><u>WARNING</u>: The returned point may <u>NOT</u> be 
      * modified by the caller!</b><br>
      * <br>
-     * If the {@link #setLabelLocationFunction(Function) label anchor function}
-     * is <code>null</code> or returns <code>null</code> for the given cell,
-     * then a default point will be returned.
+     * Returns <code>null</code> if the corresponding painting operation
+     * should be skipped.
      * 
      * @param cell The cell
      * @return The label location
@@ -1080,14 +1055,9 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     {
         if (labelLocationFunction == null)
         {
-            return DEFAULT_LABEL_LOCATION;
+            return null;
         }
-        Point2D location = labelLocationFunction.apply(cell);
-        if (location == null)
-        {
-            return DEFAULT_LABEL_LOCATION;
-        }
-        return location;
+        return labelLocationFunction.apply(cell);
     }
     
     
@@ -1184,14 +1154,13 @@ public class BasicCellPainter implements ObjectPainter<Cell>
      * When the {@link #getFillPaint(Cell) fill paint} for the given cell 
      * is not <code>null</code>, then this method will fill the 
      * {@link Cell#getShape() cell shape} with this paint, by calling
-     * {@link #fillShapeWithTransformedGraphics(Graphics2D, AffineTransform, 
-     * double, double, Shape, Paint)}.
+     * {@link #fillShapeWithTransformedGraphics}.
      * <br>
-     * When the {@link #getDrawPaint(Cell) draw paint} of the given cell 
-     * is not <code>null</code>, then this method will draw the 
+     * When the {@link #getDrawPaint(Cell) draw paint} and the
+     * {@link #getDrawStroke(Cell) draw stroke} of the given cell 
+     * are not <code>null</code>, then this method will draw the 
      * {@link Cell#getShape() cell shape} by calling 
-     * {@link #drawTransformedShape(Graphics2D, AffineTransform, double, 
-     * double, Shape, Paint, Stroke)}.
+     * {@link #drawTransformedShape}.
      * <br>
      * The given world-to-screen transform is the transform that transforms
      * the {@link Cell#getShape() shape} of the cell from world coordinates
@@ -1260,13 +1229,12 @@ public class BasicCellPainter implements ObjectPainter<Cell>
      * When the {@link #getFillPaint(Cell) fill paint} for the given cell 
      * is not <code>null</code>, then this method will fill the 
      * unit rectangle with this paint, by calling
-     * {@link #fillShapeWithTransformedGraphics(Graphics2D, AffineTransform,
-     * double, double, Shape, Paint)}.
+     * {@link #fillShapeWithTransformedGraphics}.
      * <br>
-     * When the {@link #getDrawPaint(Cell) draw paint} of the given cell is 
-     * not <code>null</code>, then this method will draw the unit rectangle 
-     * by calling {@link #drawTransformedShape(Graphics2D, AffineTransform, 
-     * double, double, Shape, Paint, Stroke)}.
+     * When the {@link #getContentDrawPaint(Cell) content draw paint} and the
+     * {@link #getContentDrawStroke(Cell) content draw stroke} of the given 
+     * cell are not <code>null</code>, then this method will draw the unit 
+     * rectangle by calling {@link #drawTransformedShape}.
      * <br>
      * The given world-to-screen transform is the transform that transforms
      * the unit rectangle to the screen rectangle of the content area of
@@ -1413,6 +1381,11 @@ public class BasicCellPainter implements ObjectPainter<Cell>
         {
             return;
         }
+        Font font = getLabelFont(cell);
+        if (font == null)
+        {
+            return;
+        }
         
         double screenSpaceX = 
             AffineTransforms.computeDistanceX(worldToScreen, 1.0);
@@ -1422,8 +1395,6 @@ public class BasicCellPainter implements ObjectPainter<Cell>
         }
         
         g.setPaint(labelPaint);
-
-        Font font = getLabelFont(cell);
         g.setFont(font);
         
         if (transformingLabels)
@@ -1456,11 +1427,25 @@ public class BasicCellPainter implements ObjectPainter<Cell>
         AffineTransform worldToScreen, double w, double h, 
         Cell cell, String label)
     {
+        Point2D labelAnchor = getLabelAnchor(cell);
+        if (labelAnchor == null)
+        {
+            return;
+        }
+        Point2D labelLocation = getLabelLocation(cell);
+        if (labelLocation == null)
+        {
+            return;
+        }
+        Font font = getLabelFont(cell);
+        if (font == null)
+        {
+            return;
+        }
+        g.setFont(font);
+
         AffineTransform oldAt = g.getTransform();
         g.transform(worldToScreen);
-
-        Point2D labelAnchor = getLabelAnchor(cell);
-        Point2D labelLocation = getLabelLocation(cell);
         
         Rectangle2D labelBounds = 
             StringBoundsUtils.computeStringBoundsEstimate(
@@ -1506,7 +1491,15 @@ public class BasicCellPainter implements ObjectPainter<Cell>
         Cell cell, String label, double screenSpaceX)
     {
         Point2D labelAnchor = getLabelAnchor(cell);
+        if (labelAnchor == null)
+        {
+            return;
+        }
         Point2D labelLocation = getLabelLocation(cell);
+        if (labelLocation == null)
+        {
+            return;
+        }
 
         Rectangle2D labelBounds = 
             StringBoundsUtils.computeStringBoundsEstimate(
