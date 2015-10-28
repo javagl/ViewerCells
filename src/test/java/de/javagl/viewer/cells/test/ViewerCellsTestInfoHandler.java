@@ -1,5 +1,5 @@
 /*
- * www.javagl.de - Viewer
+ * www.javagl.de - Viewer - Cells
  *
  * Copyright (c) 2013-2015 Marco Hutter - http://www.javagl.de
  */

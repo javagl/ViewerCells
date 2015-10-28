@@ -103,7 +103,7 @@ class CellMapPainter implements Painter
      * 
      * @param cellPainter The cell painter
      */
-    void removeCellPainter(ObjectPainter<Cell> cellPainter)
+    void removeCellPainter(ObjectPainter<? super Cell> cellPainter)
     {
         Set<Integer> toRemove = new LinkedHashSet<Integer>();
         for (Entry<Integer, List<ObjectPainter<? super Cell>>> entry : 

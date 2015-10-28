@@ -1,5 +1,9 @@
+/*
+ * www.javagl.de - Viewer - Cells
+ *
+ * Copyright (c) 2013-2015 Marco Hutter - http://www.javagl.de
+ */
 package de.javagl.viewer.cells.test;
-
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -83,7 +87,7 @@ public class ViewerCellsTest
      */
     private static CellMapPanel createCellMapPanel()
     {
-        CellMapPanel cellMapPanel = new CellMapPanel(true, true, false);
+        CellMapPanel cellMapPanel = new CellMapPanel();
         HexagonGrid hexagonGrid = HexagonGrids.create(10, false, true);
         CellMap cellMap = null;
         cellMap = CellMaps.createHexagon(8, 6, hexagonGrid);

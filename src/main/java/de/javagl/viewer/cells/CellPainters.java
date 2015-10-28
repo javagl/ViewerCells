@@ -32,17 +32,18 @@ import java.util.function.Function;
 import de.javagl.viewer.ObjectPainter;
 
 /**
- * Methods related to cell painters
+ * Methods to create {@link ObjectPainter} instances that can paint
+ * {@link Cell}s.
  */
-class CellPainters
+public class CellPainters
 {
     /**
-     * Create a default cell painter that paints the black cell outline
-     * and the cell coordinates as labels.
+     * Create a default {@link ObjectPainter} that paints the a black outline
+     * of a {@link Cell}, and its coordinates as the label.
      * 
      * @return The cell painter
      */
-    static ObjectPainter<Cell> createDefault()
+    public static ObjectPainter<Cell> createDefault()
     {
         BasicCellPainter basicCellPainter = new BasicCellPainter();
         basicCellPainter.setDrawPaint(Color.BLACK);

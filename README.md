@@ -18,3 +18,15 @@ implementations of cell painters.
 The basic usage is demonstrated in the 
 [ViewerCellsTest](https://github.com/javagl/ViewerCells/blob/master/src/test/java/de/javagl/viewer/cells/test/ViewerCellsTest.java)
 class.
+
+
+# Changes
+
+0.0.2 : 
+
+  * Refactored `BasicCellPainter` to use the `LabelPainter` from
+    `de.javagl:viewer:0.0.3`
+
+0.0.1 : 
+
+  * Initial commit

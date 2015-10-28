@@ -30,6 +30,7 @@ import java.awt.Shape;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
+import de.javagl.viewer.MouseControls;
 import de.javagl.viewer.ObjectPainter;
 import de.javagl.viewer.Viewer;
 
@@ -63,31 +64,20 @@ public class CellMapPanel extends Viewer
     private CellMapPainter cellMapPainter;
     
     /**
-     * Default constructor
+     * Creates a new cell map panel.<br>
+     * <br>
+     * This cell map panel that does not paint anything, unless a 
+     * {@link #addCellPainter(ObjectPainter, int) cell painter} 
+     * is added.<br>
+     * <br>
+     * It will have {@link MouseControls#createDefault(Viewer) default 
+     * mouse controls} where rotation and non-uniform scaling are
+     * allowed
      */
     public CellMapPanel()
     {
-        this(true, true, true);
-    }
-    
-    /**
-     * Creates a new cell map panel
-     * 
-     * @param defaultControls Whether the default mouse controls
-     * should be installed
-     * @param rotationAllowed Whether rotation should be allowed
-     * @param defaultCellPainter Whether a default cell painter should
-     * be installed
-     */
-    public CellMapPanel(boolean defaultControls,
-        boolean rotationAllowed, boolean defaultCellPainter)
-    {
-        super(defaultControls, rotationAllowed);
+        setMouseControl(MouseControls.createDefault(this, true, true));
         setCellMapPainter(new CellMapPainter());
-        if (defaultCellPainter)
-        {
-            addCellPainter(CellPainters.createDefault(), 0);
-        }
     }
     
     /**
@@ -107,13 +97,17 @@ public class CellMapPanel extends Viewer
     }
 
     /**
-     * Add the given cell painter
+     * Add the given cell painter. The {@link ObjectPainter#paint} method
+     * of the given painter will be called when this panel is repainted,
+     * passing in the {@link Cell}s of the current {@link CellMap} as
+     * the last argument (if the current {@link CellMap} is not 
+     * <code>null</code>)
      * 
      * @param cellPainter The cell painter to add
      * @param layer The layer
      */
     public final void addCellPainter(
-        ObjectPainter<Cell> cellPainter, int layer)
+        ObjectPainter<? super Cell> cellPainter, int layer)
     {
         cellMapPainter.addCellPainter(cellPainter, layer);
         repaint();
@@ -125,7 +119,7 @@ public class CellMapPanel extends Viewer
      * @param cellPainter The cell painter to remove
      */
     public final void removeCellPainter(
-        ObjectPainter<Cell> cellPainter)
+        ObjectPainter<? super Cell> cellPainter)
     {
         cellMapPainter.removeCellPainter(cellPainter);
         repaint();
@@ -141,7 +135,15 @@ public class CellMapPanel extends Viewer
     }
     
     /**
-     * Set the {@link CellMap} that will be used for painting
+     * Set the {@link CellMap} that will be used for painting. <br>
+     * <br>
+     * If the given {@link CellMap} is <code>null</code>, then this
+     * panel will not paint anything.<br>
+     * <br>
+     * Otherwise, when this panel is repainted, the {@link Cell}s of the 
+     * given {@link CellMap} will be passed to the {@link ObjectPainter#paint} 
+     * method of all {@link #addCellPainter(ObjectPainter, int) cell painters}
+     * that have been added to this panel.
      * 
      * @param cellMap The {@link CellMap}
      */
@@ -153,7 +155,8 @@ public class CellMapPanel extends Viewer
     }
     
     /**
-     * Returns the {@link CellMap} that is used for painting
+     * Returns the {@link CellMap} that is used for painting. This may
+     * be <code>null</code>.
      * 
      * @return The {@link CellMap}
      */

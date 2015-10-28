@@ -40,6 +40,8 @@ import java.util.function.ToDoubleFunction;
 
 import de.javagl.geom.AffineTransforms;
 import de.javagl.viewer.ObjectPainter;
+import de.javagl.viewer.painters.LabelPainter;
+import de.javagl.viewer.painters.StringBoundsUtils;
 
 // TODO The scaling functions should probably be ToDoubleFunction
 
@@ -111,11 +113,6 @@ public class BasicCellPainter implements ObjectPainter<Cell>
     private static final Rectangle2D TEMP_RECTANGLE = new Rectangle2D.Double();
 
     /**
-     * A point instance used for internal computations 
-     */
-    private static final Point2D TEMP_POINT = new Point2D.Double();
-    
-    /**
      * The function that provides the fill paint for the cells
      */
     private Function<? super Cell, ? extends Paint> 
@@ -182,9 +179,9 @@ public class BasicCellPainter implements ObjectPainter<Cell>
         labelLocationFunction = null;
     
     /**
-     * Whether this painter is transforming the labels. 
+     * The painter for the labels
      */
-    private boolean transformingLabels;
+    private final LabelPainter labelPainter;
     
     /**
      * Whether this painter is hiding long labels
@@ -257,9 +254,11 @@ public class BasicCellPainter implements ObjectPainter<Cell>
      */
     public BasicCellPainter()
     {
-        scaledWorldToScreenTransform = new AffineTransform();
-        contentTransform = new AffineTransform();
-        backupContentTransform = new AffineTransform();
+        this.scaledWorldToScreenTransform = new AffineTransform();
+        this.contentTransform = new AffineTransform();
+        this.backupContentTransform = new AffineTransform();
+        
+        this.labelPainter = new LabelPainter();
 
         setLabelFont(new Font("Dialog", Font.PLAIN, 1).deriveFont(10.0f));
         setLabelAnchor(new Point2D.Double(0.5, 0.5));
@@ -270,6 +269,7 @@ public class BasicCellPainter implements ObjectPainter<Cell>
         
         setDrawStroke(new BasicStroke(1.0f));        
         setContentDrawStroke(new BasicStroke(1.0f));
+        
     }
     
     /**
@@ -627,7 +627,7 @@ public class BasicCellPainter implements ObjectPainter<Cell>
      * If this is <code>true</code>, then the labels will be scaled and 
      * rotated depending on the world-to-screen transform. This usually only 
      * makes sense for labels with a {@link #getLabelFont(Cell) label font}
-     * whose size smaller than 1.0f.<br>
+     * whose size is smaller than the size of the {@link Cell}s.<br>
      * <br>
      * If this is <code>false</code>, then the labels will only be 
      * <i>placed</i> based on the world-to-screen transform, but the
@@ -642,7 +642,7 @@ public class BasicCellPainter implements ObjectPainter<Cell>
      */
     public void setTransformingLabels(boolean transformingLabels)
     {
-        this.transformingLabels = transformingLabels;
+        labelPainter.setTransformingLabels(transformingLabels);
     }
 
     /**
@@ -654,7 +654,7 @@ public class BasicCellPainter implements ObjectPainter<Cell>
      */
     public boolean isTransformingLabels()
     {
-        return transformingLabels;
+        return labelPainter.isTransformingLabels();
     }
 
     
@@ -1386,6 +1386,16 @@ public class BasicCellPainter implements ObjectPainter<Cell>
         {
             return;
         }
+        Point2D labelAnchor = getLabelAnchor(cell);
+        if (labelAnchor == null)
+        {
+            return;
+        }
+        Point2D labelLocation = getLabelLocation(cell);
+        if (labelLocation == null)
+        {
+            return;
+        }
         
         double screenSpaceX = 
             AffineTransforms.computeDistanceX(worldToScreen, 1.0);
@@ -1394,133 +1404,32 @@ public class BasicCellPainter implements ObjectPainter<Cell>
             return;
         }
         
+        if (hidingLongLabels)
+        {
+            Rectangle2D labelBounds = 
+                StringBoundsUtils.computeStringBounds(
+                    label, font, TEMP_RECTANGLE);
+            if (isTransformingLabels())
+            {
+                if (labelBounds.getWidth() > 1.0)
+                {
+                    return;
+                }
+            }
+            if (labelBounds.getWidth() > screenSpaceX)
+            {
+                return;
+            }
+        }
+        
         g.setPaint(labelPaint);
         g.setFont(font);
         
-        if (transformingLabels)
-        {
-            drawLabelStringWithTransformedGraphics(
-                g, worldToScreen, w, h, cell, label);
-        }
-        else
-        {
-            drawLabelStringFixed(
-                g, worldToScreen, w, h, cell, label, screenSpaceX);
-        }
-    }
-    
-    /**
-     * Paint the label for the given cell. This method will draw the
-     * given label string into the cell, transformed according to the
-     * given world-to-screen transform.
-     * 
-     * @param g The Graphics used for painting 
-     * @param worldToScreen The world-to-screen transform
-     * @param w The width of the area, in screen coordinates, for 
-     * which this painter is responsible 
-     * @param h The height of the area, in screen coordinates, for 
-     * which this painter is responsible 
-     * @param cell The cell whose label to paint
-     * @param label The label. May not be <code>null</code>.
-     */
-    private void drawLabelStringWithTransformedGraphics(Graphics2D g, 
-        AffineTransform worldToScreen, double w, double h, 
-        Cell cell, String label)
-    {
-        Point2D labelAnchor = getLabelAnchor(cell);
-        if (labelAnchor == null)
-        {
-            return;
-        }
-        Point2D labelLocation = getLabelLocation(cell);
-        if (labelLocation == null)
-        {
-            return;
-        }
-        Font font = getLabelFont(cell);
-        if (font == null)
-        {
-            return;
-        }
-        g.setFont(font);
-
-        AffineTransform oldAt = g.getTransform();
-        g.transform(worldToScreen);
-        
-        Rectangle2D labelBounds = 
-            StringBoundsUtils.computeStringBoundsEstimate(
-                label, g, TEMP_RECTANGLE);
-        if (!hidingLongLabels || labelBounds.getWidth() <= 1.0)
-        {
-            double labelAnchorDx = 
-                -labelBounds.getX() 
-                -labelBounds.getWidth() * labelAnchor.getX();
-            double labelAnchorDy = 
-                -labelBounds.getY() 
-                -labelBounds.getHeight() * labelAnchor.getY();
-            double dx = labelLocation.getX()+labelAnchorDx;
-            double dy = labelLocation.getY()+labelAnchorDy;
-            g.translate(dx, dy);
-            g.drawString(label, 0, 0);
-
-            //g.setStroke(new BasicStroke(0.001f));
-            //g.draw(labelBounds);
-        }
-        g.setTransform(oldAt);
-    }
-    
-    /**
-     * Paint the label for the given cell. This method will draw the
-     * given label string into the cell, at a position that is computed
-     * from the given world-to-screen transform, but without applying
-     * the transform to the painted string itself. 
-     * 
-     * @param g The Graphics used for painting 
-     * @param worldToScreen The world-to-screen transform
-     * @param w The width of the area, in screen coordinates, for 
-     * which this painter is responsible 
-     * @param h The height of the area, in screen coordinates, for 
-     * which this painter is responsible 
-     * @param cell The cell whose label to paint
-     * @param label The label. May not be <code>null</code>.
-     * @param screenSpaceX The space that is available on the screen for 
-     * the label, in x-direction 
-     */
-    private void drawLabelStringFixed(Graphics2D g, 
-        AffineTransform worldToScreen, double w, double h, 
-        Cell cell, String label, double screenSpaceX)
-    {
-        Point2D labelAnchor = getLabelAnchor(cell);
-        if (labelAnchor == null)
-        {
-            return;
-        }
-        Point2D labelLocation = getLabelLocation(cell);
-        if (labelLocation == null)
-        {
-            return;
-        }
-
-        Rectangle2D labelBounds = 
-            StringBoundsUtils.computeStringBoundsEstimate(
-                label, g, TEMP_RECTANGLE);
-        if (!hidingLongLabels || screenSpaceX > 1.05 * labelBounds.getWidth())
-        {
-            worldToScreen.transform(labelLocation, TEMP_POINT);
-            double labelScreenX = TEMP_POINT.getX();
-            double labelScreenY = TEMP_POINT.getY();
-            double labelAnchorDx = 
-                -labelBounds.getX() 
-                -labelBounds.getWidth() * labelAnchor.getX();
-            double labelAnchorDy = 
-                -labelBounds.getY() 
-                -labelBounds.getHeight() * labelAnchor.getY();
-            double dx = labelScreenX+labelAnchorDx;
-            double dy = labelScreenY+labelAnchorDy;
-            g.translate(dx, dy);
-            g.drawString(label, 0, 0);
-            g.translate(-dx, -dy);
-        }
+        labelPainter.setLabelAnchor(
+            labelAnchor.getX(), labelAnchor.getY());
+        labelPainter.setLabelLocation(
+            labelLocation.getX(), labelLocation.getY());
+        labelPainter.paint(g, worldToScreen, w, h, label);
     }
 }
 

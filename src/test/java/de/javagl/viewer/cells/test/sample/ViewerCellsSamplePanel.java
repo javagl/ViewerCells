@@ -34,7 +34,7 @@ class ViewerCellsSamplePanel extends JPanel
     {
         super(new BorderLayout());
         
-        cellMapPanel = new CellMapPanel(true, true, false);
+        cellMapPanel = new CellMapPanel();
         add(cellMapPanel, BorderLayout.CENTER);
         
         basicCellPainter = new BasicCellPainter()
